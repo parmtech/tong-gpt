@@ -5,7 +5,8 @@
     <string name="settings_description">Just ChatGPT Web, without browser clutter.</string>
     <string name="keep_awake">Keep screen awake</string>
     <string name="keep_awake_description">On by default. Your phone stays awake while Tong GPT is on screen. Turn it off to use normal screen timeout.</string>
-    <string name="open_browser">Open ChatGPT in browser</string>
+    <string name="open_browser">Open ChatGPT in browser (voice/login fallback)</string>
+    <string name="reload_chat">Reload ChatGPT</string>
     <string name="disclaimer">Independent app by ParmTech. Not affiliated with or endorsed by OpenAI. Some sign-in methods may not work inside Android WebView.</string>
     <string name="done">Done</string>
     <string name="cannot_load">Unable to open ChatGPT</string>
