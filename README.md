@@ -100,3 +100,6 @@ ChatGPT and OpenAI are trademarks of OpenAI. The website, AI models, accounts, s
 *Originally for personal use. Shared with the community.*
 
 </div>
+
+
+**Experimental debug signing:** APK update may require uninstalling the previous build; this clears the in-app WebView login session. Use a persistent secure release signing key for upgrade-safe public distribution.
