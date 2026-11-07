@@ -70,6 +70,7 @@ class MainActivity : Activity() {
     private lateinit var browser: WebView
     private lateinit var progress: ProgressBar
     private var blobSaver: BlobImageSaver? = null
+    private val nativeDownloader by lazy { NativeFileDownloader(this) }
     private lateinit var menuButton: TextView
     private val toolbarHeight by lazy { dp(44) }
     private var errorOverlay: View? = null
@@ -295,6 +296,16 @@ class MainActivity : Activity() {
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
                 downloadFile(url, userAgent, contentDisposition, mimeType)
             }
+            setOnLongClickListener {
+                val hit = hitTestResult
+                val link = hit?.extra
+                if (link.isNullOrBlank() || !link.startsWith("https://", ignoreCase = true)) {
+                    false
+                } else {
+                    this@MainActivity.showLinkActions(link)
+                    true
+                }
+            }
         }
         blobSaver = BlobImageSaver(this, browser).also { it.install() }
         val debug = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
@@ -333,6 +344,16 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             contentDescription = "Tong GPT app toolbar"
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        bar.addView(TextView(this).apply {
+            text = "🎙"
+            textSize = 19f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            contentDescription = "Native voice typing"
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { startNativeDictation() }
+        }, LinearLayout.LayoutParams(dp(44), dp(40)))
         menuButton = TextView(this).apply {
             text = "⋮"
             textSize = 26f
@@ -671,6 +692,7 @@ class MainActivity : Activity() {
             toast(getString(R.string.unsupported_download))
             return
         }
+        if (nativeDownloader.download(url, suggested, userAgent)) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             openExternal(url)
             return
@@ -694,6 +716,25 @@ class MainActivity : Activity() {
         } catch (_: Exception) {
             toast(getString(R.string.unsupported_download))
         }
+    }
+
+    private fun showLinkActions(url: String) {
+        if (!UrlPolicy.canLaunchExternally(url)) return
+        AlertDialog.Builder(this)
+            .setTitle("ChatGPT link")
+            .setItems(arrayOf("Save linked file", "Open in Chrome", "Copy link")) { _, which ->
+                when (which) {
+                    0 -> downloadFile(url, browser.settings.userAgentString, null, null)
+                    1 -> openExternal(url)
+                    2 -> {
+                        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                            .setPrimaryClip(ClipData.newPlainText("ChatGPT link", url))
+                        toast("Link copied")
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun exitFullScreenPlayer() {
