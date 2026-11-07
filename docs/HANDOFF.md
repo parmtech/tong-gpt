@@ -69,3 +69,22 @@
 - GitHub Actions compile + unit tests + lint must pass; review the resulting prerelease asset.
 - Test actual ChatGPT voice setup on a physical device before declaring solved.
 - A microphone permission being granted is not evidence WebRTC has connected.
+
+
+## v0.3.0-dev Windows Remote milestone
+- Native Windows Remote Activity: app/src/main/java/au/parmtech/tonggpt/WindowsRemoteActivity.kt
+- Encrypted Android Keystore token: app/src/main/java/au/parmtech/tonggpt/SecureCodexToken.kt
+- Windows Codex private Tailscale Serve script: windows/start-codex-remote.ps1
+- Full setup/security/testing guide: docs/WINDOWS_REMOTE.md
+- UX: Settings → Windows Codex Remote; Codex / Desktop / Split tabs.
+- Codex: authenticated WSS bearer to official App Server, thread listing/history/resume,
+  interactive turn/start, streamed agent messages/commands, turn/interrupt,
+  one-time manual command/file approvals (no automatic execution approvals).
+- Voice: RecognizerIntent utterance-to-editable-text + Android TextToSpeech reply.
+- Desktop: in-app, HTTPS-only MeshCentral web client for PC live desktop and remote controls.
+- Important: MeshCentral server and Windows agent NOT bundled in APK.
+  Setup on user-owned PC required, with credentials, private tailnet and MFA.
+- No official ChatGPT Remote pairing or guaranteed access to all native Desktop chats.
+- No full-duplex ChatGPT Live voice.
+- CI compiled tests/lint and generated experimental v0.3.0-dev debug APK.
+- Real Windows pairing, voice and screen streaming MUST be tested on-device.
