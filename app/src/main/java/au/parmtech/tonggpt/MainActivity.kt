@@ -10,6 +10,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.media.AudioManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -55,6 +58,7 @@ class MainActivity : Activity() {
         private const val PREF_KEEP_AWAKE = "keep_screen_awake"
         private const val PICK_FILE = 121
         private const val REQUEST_MEDIA = 122
+        private const val REQUEST_MIC_TEST = 123
     }
 
     private lateinit var root: FrameLayout
@@ -424,6 +428,69 @@ class MainActivity : Activity() {
             .show()
     }
 
+    private fun testMicrophone() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_MIC_TEST)
+            return
+        }
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val otherRecordings = audioManager.activeRecordingConfigurations.size
+        Thread {
+            val rate = 16000
+            val buffer = AudioRecord.getMinBufferSize(
+                rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
+            )
+            var result = "Microphone test could not start. Another app may be recording, " +
+                "or your Android microphone privacy switch may be OFF."
+            if (buffer > 0) {
+                var record: AudioRecord? = null
+                try {
+                    record = AudioRecord(
+                        MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                        rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
+                        maxOf(buffer * 2, 4096)
+                    )
+                    if (record.state == AudioRecord.STATE_INITIALIZED) {
+                        record.startRecording()
+                        if (record.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                            val samples = ShortArray(2048)
+                            val size = record.read(samples, 0, samples.size)
+                            val silenced = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                                record.activeRecordingConfiguration?.isClientSilenced == true
+                            result = when {
+                                silenced -> "Android reports this app microphone capture is silenced. " +
+                                    "Close other recording apps and check Settings > Privacy > Microphone."
+                                size > 0 -> "Android microphone test succeeded. If ChatGPT Voice " +
+                                    "still shows a microphone error, Android WebView or another active " +
+                                    "voice session may be blocking WebRTC. Try Voice in Chrome."
+                                else -> "Android gave no microphone samples. Check Privacy > Microphone, " +
+                                    "then close other apps recording audio."
+                            }
+                        }
+                    }
+                } catch (_: Exception) {
+                    result = "Microphone hardware test failed. Close other voice/recording apps, " +
+                        "check Android microphone privacy and try again."
+                } finally {
+                    try { if (record?.recordingState == AudioRecord.RECORDSTATE_RECORDING) record.stop() } catch (_: Exception) {}
+                    record?.release()
+                }
+            }
+            val details = if (otherRecordings > 0)
+                "Android reported $otherRecordings recording session(s) before this test. " +
+                "This does not identify which apps are using the microphone.\n\n" else ""
+            runOnUiThread {
+                if (!isFinishing && !isDestroyed) AlertDialog.Builder(this)
+                    .setTitle("Microphone diagnostic")
+                    .setMessage(details + result)
+                    .setPositiveButton("Done", null)
+                    .setNeutralButton("Voice in browser") { _, _ -> openExternal(HOME) }
+                    .show()
+            }
+        }.start()
+    }
+
     private fun showAboutApp() {
         val version = try {
             @Suppress("DEPRECATION")
@@ -617,6 +684,13 @@ class MainActivity : Activity() {
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_MIC_TEST) {
+            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                testMicrophone()
+            } else {
+                toast("Allow microphone permission to run the diagnostic.")
+            }
+        }
         if (requestCode == REQUEST_MEDIA) {
             pendingMediaRequest?.let { request ->
                 val allGranted = permissions.indices.all { index ->
