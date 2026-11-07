@@ -355,6 +355,14 @@ class MainActivity : Activity() {
             setPadding(0, 0, 0, dp(18))
         })
         layout.addView(Button(this).apply {
+            text = getString(R.string.codex_web)
+            isAllCaps = false
+            setOnClickListener {
+                errorOverlay?.visibility = View.GONE
+                browser.loadUrl("https://chatgpt.com/codex")
+            }
+        })
+        layout.addView(Button(this).apply {
             text = getString(R.string.reload_chat)
             isAllCaps = false
             setOnClickListener {
