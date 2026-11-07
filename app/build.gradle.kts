@@ -9,8 +9,8 @@ android {
         applicationId = "au.parmtech.tonggpt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0-dev"
+        versionCode = 4
+        versionName = "0.4.0-dev"
     }
     buildTypes {
         release {
@@ -28,5 +28,6 @@ android {
 }
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.webkit:webkit:1.13.0")
     testImplementation("junit:junit:4.13.2")
 }
