@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.media.AudioManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -21,6 +22,7 @@ import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
@@ -70,9 +72,21 @@ class MainActivity : Activity() {
             .getBoolean(PREF_KEEP_AWAKE, true)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.setBackgroundDrawableResource(R.color.background)
-        hideSystemUi()
+        volumeControlStream = AudioManager.STREAM_MUSIC
+        // Render the app edge-to-edge but apply the phone's safe insets ourselves.
+        // This avoids clipped text behind status/navigation bars and camera cutouts.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
+        }
         root = FrameLayout(this).apply { setBackgroundColor(getColor(R.color.background)) }
         setContentView(root)
+        configureSafeArea()
         makeBrowser()
         addLoadingBar()
         addSettingsHandle()
@@ -93,6 +107,9 @@ class MainActivity : Activity() {
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
+                useWideViewPort = true
+                loadWithOverviewMode = true
+                textZoom = 100
                 cacheMode = WebSettings.LOAD_DEFAULT
                 allowFileAccess = false
                 allowContentAccess = true
@@ -101,7 +118,8 @@ class MainActivity : Activity() {
                 setSupportZoom(false)
                 builtInZoomControls = false
                 displayZoomControls = false
-                mediaPlaybackRequiresUserGesture = true
+                // WebRTC remote voice playback may begin after user starts the voice session.
+                mediaPlaybackRequiresUserGesture = false
                 mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     safeBrowsingEnabled = true
@@ -405,25 +423,40 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun hideSystemUi() {
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility =
-            (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-             View.SYSTEM_UI_FLAG_FULLSCREEN or
-             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-             View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+    private fun configureSafeArea() {
+        root.setOnApplyWindowInsetsListener { view, insets ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val safe = insets.getInsets(
+                    WindowInsets.Type.statusBars() or
+                    WindowInsets.Type.navigationBars() or
+                    WindowInsets.Type.displayCutout()
+                )
+                val keyboard = insets.getInsets(WindowInsets.Type.ime())
+                view.setPadding(
+                    safe.left,
+                    safe.top,
+                    safe.right,
+                    maxOf(safe.bottom, keyboard.bottom)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                view.setPadding(
+                    insets.systemWindowInsetLeft,
+                    insets.systemWindowInsetTop,
+                    insets.systemWindowInsetRight,
+                    insets.systemWindowInsetBottom
+                )
+            }
+            // Do not consume insets: the website and Android system can still
+            // measure the current viewport and soft keyboard correctly.
+            insets
+        }
+        root.requestApplyInsets()
     }
 
     private fun dp(value: Int): Int = (resources.displayMetrics.density * value + 0.5f).toInt()
 
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemUi()
-    }
 
     override fun onResume() {
         super.onResume()
