@@ -7,7 +7,7 @@
 **A minimal, independent Android project by [ParmTech](https://parmtech.au).**
 
 [![Android](https://img.shields.io/badge/Android-App-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-Planned-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Open Source](https://img.shields.io/badge/Source-Public-2367A6?style=for-the-badge)](https://github.com/parmtech/tong-gpt)
 [![Status](https://img.shields.io/badge/Status-In%20Development-FF9800?style=for-the-badge)](https://github.com/parmtech/tong-gpt)
 
@@ -37,7 +37,7 @@ This is not a new AI model or a reimplementation of ChatGPT. It is a focused And
 | ⚡ **Lean architecture** | Minimal native overhead and sensible WebView lifecycle management |
 | 🔐 **Website-managed sign-in** | ChatGPT authentication remains with the website; no separate Tong GPT account |
 
-> **Project status:** The app and the features above are in development. This README describes the intended experience, **not** a claim that a tested APK is available.
+> **Project status:** Android source code is now available, with automated GitHub Actions build and tests. Real-device validation is still pending. A GitHub prerelease may appear only after CI builds successfully.
 
 ## Design philosophy
 
@@ -62,13 +62,24 @@ Some sign-in providers, including Google, may limit authentication inside embedd
 
 ## Roadmap
 
-- [ ] Set up the Android project and app identity
-- [ ] Implement the dedicated ChatGPT WebView
-- [ ] Add safe navigation and external-link handling
-- [ ] Add optional Keep Screen Awake control
+- [x] Set up the Android project and app identity
+- [x] Implement the dedicated ChatGPT WebView
+- [x] Add safe navigation and external-link handling
+- [x] Add optional Keep Screen Awake control
 - [ ] Test sign-in, keyboard, uploads, and Android back navigation
 - [ ] Improve startup speed, error states, and accessibility
-- [ ] Publish a tested APK in GitHub Releases
+- [ ] Publish a device-tested production APK in GitHub Releases
+
+## Android source and experimental APK
+
+The Android project is in [app/](app/). Every source update runs tests, Android Lint and an automated debug APK build.
+
+- [GitHub Actions — build status](https://github.com/parmtech/tong-gpt/actions)
+- [Releases — experimental APK when available](https://github.com/parmtech/tong-gpt/releases)
+- [Technical handoff](docs/HANDOFF.md)
+- [Physical device QA checklist](docs/QA_CHECKLIST.md)
+
+**Important:** a CI-generated debug APK is experimental and may not support OAuth inside Android WebView. It is not an official OpenAI app.
 
 ## Contributing
 

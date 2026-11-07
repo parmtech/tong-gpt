@@ -1,0 +1,12 @@
+# Local build and signing material
+.gradle/
+.idea/
+*.iml
+local.properties
+**/build/
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+.DS_Store

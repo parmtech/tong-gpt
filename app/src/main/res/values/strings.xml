@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tong GPT</string>
+    <string name="settings">Tong GPT Settings</string>
+    <string name="settings_description">Just ChatGPT Web, without browser clutter.</string>
+    <string name="keep_awake">Keep screen awake</string>
+    <string name="keep_awake_description">On by default. Your phone stays awake while Tong GPT is on screen. Turn it off to use normal screen timeout.</string>
+    <string name="open_browser">Open ChatGPT in browser</string>
+    <string name="disclaimer">Independent app by ParmTech. Not affiliated with or endorsed by OpenAI. Some sign-in methods may not work inside Android WebView.</string>
+    <string name="done">Done</string>
+    <string name="cannot_load">Unable to open ChatGPT</string>
+    <string name="web_unavailable">Check your internet connection and try again. If sign-in is blocked inside WebView, use the external browser option.</string>
+    <string name="secure_connection_failed">Secure connection failed. Certificate errors are never bypassed.</string>
+    <string name="retry">Try again</string>
+    <string name="no_file_picker">No compatible file picker found.</string>
+    <string name="unsupported_download">File could not be downloaded. Try your browser.</string>
+    <string name="download_description">Downloading from ChatGPT Web</string>
+    <string name="download_started">Download started</string>
+    <string name="link_blocked">This link type is not supported.</string>
+    <string name="browser_unavailable">No external browser found.</string>
+    <string name="back_to_exit">Press Back again to exit Tong GPT</string>
+</resources>

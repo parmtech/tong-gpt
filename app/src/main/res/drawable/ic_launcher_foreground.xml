@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Original Tong GPT conversation-mark, not an OpenAI/ChatGPT logo. -->
+    <path android:pathData="M23,39 C23,27 32,22 45,22 L64,22 C78,22 86,31 86,45 L86,56 C86,69 77,77 62,77 L48,77 L32,87 L35,75 C27,70 23,63 23,54 Z"
+        android:fillColor="#123C54" android:strokeColor="#45E4E4"
+        android:strokeWidth="3.2" android:strokeLineJoin="round"/>
+    <path android:pathData="M39,42 L69,42" android:strokeColor="#ECF8FE"
+        android:strokeWidth="6.3" android:strokeLineCap="round"/>
+    <path android:pathData="M54,42 L54,65" android:strokeColor="#36E8DE"
+        android:strokeWidth="6.3" android:strokeLineCap="round"/>
+    <path android:pathData="M68,61 L76,53 L68,45" android:strokeColor="#82B9FF"
+        android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+</vector>
