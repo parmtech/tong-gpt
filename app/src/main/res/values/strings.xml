@@ -21,4 +21,5 @@
     <string name="link_blocked">This link type is not supported.</string>
     <string name="browser_unavailable">No external browser found.</string>
     <string name="back_to_exit">Press Back again to exit Tong GPT</string>
+    <string name="windows_remote">Windows Codex Remote · Voice + Desktop</string>
 </resources>
