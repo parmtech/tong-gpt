@@ -26,6 +26,20 @@ internal object UrlPolicy {
         return host == "chatgpt.com" || host.endsWith(".chatgpt.com")
     }
 
+    /**
+     * In-app authenticated downloads are limited to OpenAI and ChatGPT-hosted
+     * resources. Other HTTPS links remain ordinary external downloads/links.
+     */
+    fun isTrustedDownloadOrigin(url: String): Boolean {
+        val uri = try { URI(url) } catch (_: Exception) { return false }
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            uri.rawUserInfo != null || uri.port !in listOf(-1, 443)) return false
+        val host = uri.host?.lowercase(Locale.ROOT) ?: return false
+        return host == "chatgpt.com" || host.endsWith(".chatgpt.com") ||
+            host == "openai.com" || host.endsWith(".openai.com") ||
+            host == "oaiusercontent.com" || host.endsWith(".oaiusercontent.com")
+    }
+
     fun canLaunchExternally(url: String): Boolean {
         val uri = try { URI(url) } catch (_: Exception) { return false }
         return when (uri.scheme?.lowercase(Locale.ROOT)) {
