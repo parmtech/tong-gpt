@@ -60,6 +60,7 @@ class MainActivity : Activity() {
         private const val HOME = "https://chatgpt.com/"
         private const val PREFS = "tong_gpt_preferences"
         private const val PREF_KEEP_AWAKE = "keep_screen_awake"
+        private const val PREF_BROWSER_COMPAT = "browser_compatibility_mode"
         private const val PICK_FILE = 121
         private const val REQUEST_MEDIA = 122
         private const val REQUEST_MIC_TEST = 123
@@ -127,6 +128,10 @@ class MainActivity : Activity() {
                 useWideViewPort = true
                 loadWithOverviewMode = true
                 textZoom = 100
+                if (getSharedPreferences(PREFS, MODE_PRIVATE)
+                        .getBoolean(PREF_BROWSER_COMPAT, false)) {
+                    userAgentString = browserCompatibleUserAgent()
+                }
                 cacheMode = WebSettings.LOAD_DEFAULT
                 allowFileAccess = false
                 allowContentAccess = true
@@ -371,6 +376,12 @@ class MainActivity : Activity() {
         ))
     }
 
+    private fun browserCompatibleUserAgent(): String =
+        WebSettings.getDefaultUserAgent(this)
+            .replace("; wv", "")
+            .replace(" Version/4.0", "")
+            .replace(" wv", "")
+
     private fun showSettings() {
         var dialog: AlertDialog? = null
         val page = LinearLayout(this).apply {
@@ -427,6 +438,29 @@ class MainActivity : Activity() {
         action("Open ChatGPT in Chrome") { openExternal(browser.url ?: HOME) }
 
         section("Preferences")
+        page.addView(Switch(this).apply {
+            text = "Browser compatibility mode · experimental"
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            isChecked = getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getBoolean(PREF_BROWSER_COMPAT, false)
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+            setOnCheckedChangeListener { _, enabled ->
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putBoolean(PREF_BROWSER_COMPAT, enabled).apply()
+                browser.settings.userAgentString = if (enabled) browserCompatibleUserAgent()
+                    else WebSettings.getDefaultUserAgent(this@MainActivity)
+                dialog?.dismiss()
+                browser.reload()
+                toast("Browser compatibility changed. ChatGPT is reloading.")
+            }
+        })
+        page.addView(TextView(this).apply {
+            text = "Can help WebView-only voice or download issues. Turn off if sign-in or the site breaks."
+            textSize = 12f
+            setTextColor(getColor(R.color.body_text))
+            setPadding(dp(8), 0, dp(8), dp(6))
+        })
         page.addView(Switch(this).apply {
             text = getString(R.string.keep_awake)
             textSize = 15f
