@@ -10,6 +10,7 @@ import android.net.http.SslError
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
+import android.content.res.Configuration
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -63,6 +64,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
     private var threadLoaded = false
     private var replyBuffer = StringBuilder()
     private lateinit var root: LinearLayout
+    private lateinit var paneHolder: LinearLayout
     private lateinit var codexPane: LinearLayout
     private lateinit var desktopPane: LinearLayout
     private lateinit var connectForm: LinearLayout
@@ -108,8 +110,13 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         }
         root.addView(status)
 
-        codexPane = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(codexPane, weighted())
+        paneHolder = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(paneHolder, paneParams())
+        codexPane = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(3), 0, dp(3), 0)
+        }
+        paneHolder.addView(codexPane, paneParams())
 
         connectForm = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         codexPane.addView(connectForm)
@@ -163,7 +170,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         codexPane.addView(composer)
 
         desktopPane = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(desktopPane, weighted())
+        paneHolder.addView(desktopPane, paneParams())
         desktopPane.addView(text("Windows live desktop · MeshCentral (private HTTPS)", 13, 0xFF72E2D9.toInt()))
         val desktopControls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         desktopUrlField = field("https://your-pc.tailnet.ts.net:8444/").apply {
@@ -213,13 +220,33 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun setMode(mode: Int) {
+        // Parent is vertical: weight must apply to HEIGHT, never width.
+        // Landscape split shows columns, portrait split shows rows.
+        val wide = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        paneHolder.orientation = if (mode == 2 && wide) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
         codexPane.visibility = if (mode == 1) View.GONE else View.VISIBLE
         desktopPane.visibility = if (mode == 0) View.GONE else View.VISIBLE
-        if (mode == 2) {
-            root.findViewById<View>(android.R.id.content)?.requestLayout()
-            status("Split view · Codex and live desktop")
+        val params = if (paneHolder.orientation == LinearLayout.HORIZONTAL) {
+            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+        } else {
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
         }
+        codexPane.layoutParams = LinearLayout.LayoutParams(params.width, params.height, params.weight)
+        desktopPane.layoutParams = LinearLayout.LayoutParams(params.width, params.height, params.weight)
+        // Reduce setup form in split mode; Codex session and live desktop remain visible.
+        connectForm.visibility = if (mode == 2 && connected) View.GONE else View.VISIBLE
+        paneHolder.requestLayout()
+        status(
+            when(mode) {
+                0 -> if (connected) "Codex connected" else "Codex · Connect your Windows PC"
+                1 -> "Desktop · Secure MeshCentral connection"
+                else -> "Split · Codex and live Windows screen"
+            }
+        )
     }
+
+    private fun paneParams(): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
 
     private fun openDesktop() {
         val raw = desktopUrlField.text.toString().trim()
