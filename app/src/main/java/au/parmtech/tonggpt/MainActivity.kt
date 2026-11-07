@@ -5,11 +5,14 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.ActivityNotFoundException
+import android.content.ClipboardManager
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.media.AudioManager
+import android.speech.RecognizerIntent
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -42,6 +45,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
@@ -59,6 +63,7 @@ class MainActivity : Activity() {
         private const val PICK_FILE = 121
         private const val REQUEST_MEDIA = 122
         private const val REQUEST_MIC_TEST = 123
+        private const val REQUEST_SPEECH_INPUT = 124
     }
 
     private lateinit var root: FrameLayout
@@ -346,88 +351,190 @@ class MainActivity : Activity() {
     }
 
     private fun showSettings() {
-        val layout = LinearLayout(this).apply {
+        var dialog: AlertDialog? = null
+        val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(22), dp(10), dp(22), dp(8))
+            setPadding(dp(18), dp(8), dp(18), dp(8))
+            setBackgroundColor(0xFF111B29.toInt())
         }
-        layout.addView(TextView(this).apply {
-            text = getString(R.string.settings_description)
-            textSize = 14f
-            setTextColor(getColor(R.color.body_text))
-            setPadding(0, dp(2), 0, dp(14))
-        })
-        layout.addView(Switch(this).apply {
+        fun section(name: String) {
+            page.addView(TextView(this).apply {
+                text = name.uppercase()
+                textSize = 11f
+                letterSpacing = 0.12f
+                setTextColor(getColor(R.color.aqua))
+                setPadding(dp(4), dp(15), 0, dp(6))
+            })
+        }
+        fun action(name: String, task: () -> Unit) {
+            page.addView(TextView(this).apply {
+                text = name
+                textSize = 15f
+                gravity = Gravity.CENTER_VERTICAL
+                minHeight = dp(48)
+                setTextColor(Color.WHITE)
+                setPadding(dp(14), dp(7), dp(14), dp(7))
+                background = GradientDrawable().apply {
+                    setColor(0xFF233347.toInt())
+                    cornerRadius = dp(11).toFloat()
+                }
+                setOnClickListener {
+                    dialog?.dismiss()
+                    task()
+                }
+            }, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(7) })
+        }
+
+        section("Explore")
+        action("Windows Codex Remote") {
+            startActivity(Intent(this, WindowsRemoteActivity::class.java))
+        }
+        action("Codex Web") {
+            errorOverlay?.visibility = View.GONE
+            browser.loadUrl("https://chatgpt.com/codex")
+        }
+        action("Reload ChatGPT") {
+            errorOverlay?.visibility = View.GONE
+            browser.reload()
+        }
+
+        section("Voice and downloads")
+        action("🎙  Speak to type · Native microphone") { startNativeDictation() }
+        action("Test microphone") { testMicrophone() }
+        action("Open ChatGPT in Chrome") { openExternal(browser.url ?: HOME) }
+
+        section("Preferences")
+        page.addView(Switch(this).apply {
             text = getString(R.string.keep_awake)
-            textSize = 16f
+            textSize = 15f
             setTextColor(Color.WHITE)
             isChecked = keepAwake
-            showText = false
+            setPadding(dp(8), dp(3), dp(8), dp(4))
             setOnCheckedChangeListener { _, checked ->
                 keepAwake = checked
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                     .putBoolean(PREF_KEEP_AWAKE, checked).apply()
                 updateScreenAwake()
             }
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)))
-        layout.addView(TextView(this).apply {
-            text = getString(R.string.keep_awake_description)
+        })
+        page.addView(TextView(this).apply {
+            text = "Keeps the screen awake only while Tong GPT is visible."
             textSize = 12f
             setTextColor(getColor(R.color.body_text))
-            setPadding(0, 0, 0, dp(18))
+            setPadding(dp(8), 0, dp(8), dp(4))
         })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.windows_remote)
-            isAllCaps = false
-            setOnClickListener {
-                startActivity(Intent(this@MainActivity, WindowsRemoteActivity::class.java))
-            }
-        })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.codex_web)
-            isAllCaps = false
-            setOnClickListener {
-                errorOverlay?.visibility = View.GONE
-                browser.loadUrl("https://chatgpt.com/codex")
-            }
-        })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.reload_chat)
-            isAllCaps = false
-            setOnClickListener {
-                errorOverlay?.visibility = View.GONE
-                browser.reload()
-            }
-        })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.open_browser)
-            isAllCaps = false
-            setOnClickListener { openExternal(HOME) }
-        })
-        layout.addView(TextView(this).apply {
+        section("App")
+        action("About Tong GPT") { showAboutApp() }
+        page.addView(TextView(this).apply {
             text = getString(R.string.disclaimer)
-            textSize = 12f
+            textSize = 11f
             setTextColor(getColor(R.color.body_text))
-            setPadding(0, dp(18), 0, 0)
-        })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.about_app)
-            isAllCaps = false
-            setOnClickListener { showAboutApp() }
-        })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.test_microphone)
-            isAllCaps = false
-            setOnClickListener { testMicrophone() }
+            setPadding(dp(5), dp(5), dp(5), dp(12))
         })
         val scroll = ScrollView(this).apply {
             isFillViewport = false
-            addView(layout)
+            addView(page)
+        }
+        dialog = AlertDialog.Builder(this)
+            .setTitle("Tong GPT")
+            .setView(scroll)
+            .setPositiveButton("Close", null)
+            .create()
+        dialog?.show()
+        dialog?.window?.setBackgroundDrawable(GradientDrawable().apply {
+            setColor(0xFF111B29.toInt())
+            cornerRadius = dp(22).toFloat()
+        })
+    }
+
+    /** Uses the installed Android recognizer rather than broken WebView WebRTC. */
+    private fun startNativeDictation() {
+        val voice = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your ChatGPT message")
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        }
+        try {
+            startActivityForResult(voice, REQUEST_SPEECH_INPUT)
+        } catch (_: ActivityNotFoundException) {
+            AlertDialog.Builder(this)
+                .setTitle("Native voice typing unavailable")
+                .setMessage("Install or enable an Android speech recognition service. " +
+                    "You can still try ChatGPT Voice in Chrome.")
+                .setPositiveButton("Open Chrome") { _, _ -> openExternal(HOME) }
+                .setNegativeButton("Close", null).show()
+        }
+    }
+
+    private fun showSpeechResult(recognized: String) {
+        val edit = EditText(this).apply {
+            setText(recognized)
+            setSelection(recognized.length)
+            minLines = 2
+            maxLines = 7
+            setPadding(dp(22), dp(12), dp(22), dp(12))
         }
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.settings))
-            .setView(scroll)
-            .setPositiveButton(getString(R.string.done), null)
+            .setTitle("Review your voice message")
+            .setMessage("Edit the transcription, then insert it into the ChatGPT composer. " +
+                "Nothing is sent automatically.")
+            .setView(edit)
+            .setPositiveButton("Insert into chat") { _, _ ->
+                insertSpeechIntoChat(edit.text.toString())
+            }
+            .setNeutralButton("Copy text") { _, _ ->
+                copySpeech(edit.text.toString())
+                toast("Copied. Paste into your ChatGPT message.")
+            }
+            .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun copySpeech(text: String) {
+        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+            .setPrimaryClip(ClipData.newPlainText("Tong GPT speech", text))
+    }
+
+    /** Explicit, user-initiated text insertion; no website content is read. */
+    private fun insertSpeechIntoChat(text: String) {
+        if (text.isBlank()) return
+        if (!UrlPolicy.isTrustedChatGptOrigin(browser.url ?: "")) {
+            copySpeech(text)
+            toast("Copied to clipboard. Open a ChatGPT chat and paste.")
+            return
+        }
+        val js = """
+            (function() {
+                const input = document.querySelector(
+                    '#prompt-textarea, [data-testid="composer-input"], main [contenteditable="true"], textarea'
+                );
+                if (!input || input.type === 'password' || !input.getClientRects().length) return false;
+                input.focus();
+                const message = __TEXT__;
+                try {
+                    if (input.tagName.toLowerCase() === 'textarea') {
+                        const setter = Object.getOwnPropertyDescriptor(
+                            HTMLTextAreaElement.prototype, 'value').set;
+                        setter.call(input, (input.value ? input.value + ' ' : '') + message);
+                        input.dispatchEvent(new Event('input', {bubbles:true}));
+                    } else {
+                        document.execCommand('insertText', false, message);
+                        input.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertText', data:message}));
+                    }
+                    return true;
+                } catch (err) { return false; }
+            })();
+        """.trimIndent().replace("__TEXT__", org.json.JSONObject.quote(text))
+        browser.evaluateJavascript(js) { result ->
+            if (result != "true") {
+                copySpeech(text)
+                toast("Copied voice text. Long-press ChatGPT input to paste.")
+            } else {
+                toast("Voice text inserted. Review it and press Send.")
+            }
+        }
     }
 
     private fun testMicrophone() {
@@ -680,6 +787,11 @@ class MainActivity : Activity() {
     @Deprecated("Platform file chooser result handler, intentionally without AndroidX.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_SPEECH_INPUT && resultCode == RESULT_OK) {
+            val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()?.trim()
+            if (!spoken.isNullOrEmpty()) showSpeechResult(spoken)
+        }
         if (requestCode == PICK_FILE) {
             pendingFiles?.onReceiveValue(
                 WebChromeClient.FileChooserParams.parseResult(resultCode, data)
