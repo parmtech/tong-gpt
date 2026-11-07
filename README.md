@@ -81,6 +81,22 @@ The Android project is in [app/](app/). Every source update runs tests, Android 
 
 **Important:** a CI-generated debug APK is experimental and may not support OAuth inside Android WebView. It is not an official OpenAI app.
 
+## New in v0.4.0-dev
+
+The optional Tong GPT toolbar now occupies its own small safe row above ChatGPT,
+instead of covering the website's own top-right controls. About app and a native
+microphone diagnostic are under Settings. Image downloads using `blob:` URLs on
+trusted ChatGPT pages can be saved to Android Downloads / Tong GPT (Android 10+,
+up to 10 MB, supported image/PDF formats); ordinary HTTPS downloads still use
+Android DownloadManager. The Codex Remote panel's portrait/split sizing was fixed.
+
+This is an experimental version: actual Android device testing still matters.
+If ChatGPT says **Close other apps using the microphone**, the operating system
+may have another active voice recorder, or WebRTC may not work reliably in
+Android WebView. Use Settings > Test microphone to distinguish the cases, close
+other recording apps and try Voice in Chrome if necessary. Tong GPT cannot
+force microphone ownership or guarantee first-party voice feature parity.
+
 ## Windows Remote beta
 
 Open Tong GPT → Settings (✦) → **Windows Codex Remote · Voice + Desktop**.
