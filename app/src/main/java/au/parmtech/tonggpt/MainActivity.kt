@@ -304,7 +304,10 @@ class MainActivity : Activity() {
             setOnLongClickListener {
                 val hit = hitTestResult
                 val link = hit?.extra
-                if (link.isNullOrBlank() || !link.startsWith("https://", ignoreCase = true)) {
+                if (link.isNullOrBlank() ||
+                    !(link.startsWith("https://", ignoreCase = true) ||
+                      link.startsWith("blob:https://chatgpt.com/", ignoreCase = true) ||
+                      link.startsWith("data:image/", ignoreCase = true))) {
                     false
                 } else {
                     this@MainActivity.showLinkActions(link)
@@ -753,13 +756,23 @@ class MainActivity : Activity() {
     }
 
     private fun showLinkActions(url: String) {
-        if (!UrlPolicy.canLaunchExternally(url)) return
+        if (!UrlPolicy.canLaunchExternally(url) &&
+            !url.startsWith("blob:https://chatgpt.com/", ignoreCase = true) &&
+            !url.startsWith("data:image/", ignoreCase = true)) return
+        val isHttp = url.startsWith("https://", ignoreCase = true)
+        val actions = if (isHttp)
+            arrayOf("Save linked file", "Open in Chrome", "Copy link")
+            else arrayOf("Save linked file", "Copy link")
         AlertDialog.Builder(this)
-            .setTitle("ChatGPT link")
-            .setItems(arrayOf("Save linked file", "Open in Chrome", "Copy link")) { _, which ->
+            .setTitle("ChatGPT file")
+            .setItems(actions) { _, which ->
                 when (which) {
                     0 -> downloadFile(url, browser.settings.userAgentString, null, null)
-                    1 -> openExternal(url)
+                    1 -> if (isHttp) openExternal(url) else {
+                        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                            .setPrimaryClip(ClipData.newPlainText("ChatGPT link", url))
+                        toast("Link copied")
+                    }
                     2 -> {
                         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
                             .setPrimaryClip(ClipData.newPlainText("ChatGPT link", url))
