@@ -4,7 +4,7 @@
 - Owner/developer: ParmTech
 - Public repo: https://github.com/parmtech/tong-gpt
 - Package/application ID: au.parmtech.tonggpt
-- Android version: 0.1.0-dev
+- Android version: 0.2.0-dev
 - Destination: https://chatgpt.com/
 - Product: independent Android shell for the official ChatGPT mobile site (not a new AI).
 - First development milestone: 2026-11-07.
@@ -42,7 +42,7 @@
 ## Build automation
 - Main branch push triggers test, lint, debug APK compilation.
 - Passing CI uploads APK to Actions artifacts, retained 30 days.
-- Main push also attempts an experimental v0.1.0-dev prerelease.
+- Main push also attempts an experimental v0.2.0-dev prerelease.
 - Debug-signed, not Play Store-ready. Do not claim a working APK before CI verification.
 
 ## Tests and backlog
@@ -52,3 +52,20 @@
 - Device-test memory pressure, renderer recovery, edge-to-edge layout.
 - Consider blob downloads and camera attachments if demanded by site changes.
 - Production builds require durable signing and Play Store compliance review.
+
+
+## Latest changes — v0.2.0-dev
+- Screen-safe edge-to-edge root padding for status bar, navigation bar, cutout and soft keyboard.
+- Android System WebView media playback no longer requires an additional user gesture after the user starts playback.
+- WebRTC permissions now support microphone and optional camera/video capture, with strict ChatGPT HTTPS origin checks and Android runtime consent.
+- Added fullscreen web media custom view (video).
+- WebView uses the platform's default GPU layer rather than forced hardware layer.
+- Native settings offer Reload ChatGPT and optional Codex Web link; no browser toolbar.
+- Version 0.2.0-dev on public source branch. Experimental CI APK; device testing still pending.
+- Compatibility and remote architecture research: docs/COMPATIBILITY.md and docs/CODEX_RESEARCH.md.
+- No third-party code copied from GPL projects; use official APIs and original MIT-licensed implementation.
+
+### Validation criteria
+- GitHub Actions compile + unit tests + lint must pass; review the resulting prerelease asset.
+- Test actual ChatGPT voice setup on a physical device before declaring solved.
+- A microphone permission being granted is not evidence WebRTC has connected.

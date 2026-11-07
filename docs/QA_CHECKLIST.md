@@ -17,3 +17,14 @@
 - [ ] Test on Android 10, 13, 15/16 and review accessibility.
 
 External-browser sign-in does not share the embedded WebView cookie jar.
+
+## Additional v0.2 regression checks
+- [ ] ChatGPT input fits above Android 15/16 navigation handle when keyboard is closed and open.
+- [ ] All header icons visible beside selfie camera and rounded screen corners.
+- [ ] Portrait/landscape + gesture navigation + three-button navigation.
+- [ ] Start Voice: Android microphone prompt, web permission response, WebRTC connects and audio output plays.
+- [ ] If voice remains stuck: use browser fallback, compare Chrome against WebView on the same device.
+- [ ] Check camera/video request grants only verified ChatGPT origin, never unrecognised resource types.
+- [ ] Fullscreen web video opens/closes and Back returns to chat.
+- [ ] Codex Web settings button stays within ChatGPT domain; do not confuse it with native Codex Remote.
+- [ ] Verify site reload button and external sign-in fallback.
