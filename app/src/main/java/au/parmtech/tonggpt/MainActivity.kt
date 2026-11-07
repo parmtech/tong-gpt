@@ -122,16 +122,16 @@ class MainActivity : Activity() {
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    if (::progress.isInitialized) {
-                        progress.visibility = View.VISIBLE
-                        progress.progress = 8
+                    if (this@MainActivity::progress.isInitialized) {
+                        this@MainActivity.progress.visibility = View.VISIBLE
+                        this@MainActivity.progress.progress = 8
                     }
                     errorOverlay?.visibility = View.GONE
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    if (::progress.isInitialized) progress.visibility = View.GONE
+                    if (this@MainActivity::progress.isInitialized) this@MainActivity.progress.visibility = View.GONE
                 }
 
                 override fun onReceivedError(
@@ -165,9 +165,9 @@ class MainActivity : Activity() {
 
             webChromeClient = object : WebChromeClient() {
                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                    if (::progress.isInitialized) {
-                        progress.progress = newProgress.coerceIn(0, 100)
-                        progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
+                    if (this@MainActivity::progress.isInitialized) {
+                        this@MainActivity.progress.progress = newProgress.coerceIn(0, 100)
+                        this@MainActivity.progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
                     }
                 }
 
