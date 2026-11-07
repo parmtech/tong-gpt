@@ -9,8 +9,8 @@ android {
         applicationId = "au.parmtech.tonggpt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0-dev"
+        versionCode = 3
+        versionName = "0.3.0-dev"
     }
     buildTypes {
         release {
@@ -26,4 +26,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
     lint { abortOnError = true }
 }
-dependencies { testImplementation("junit:junit:4.13.2") }
+dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    testImplementation("junit:junit:4.13.2")
+}
