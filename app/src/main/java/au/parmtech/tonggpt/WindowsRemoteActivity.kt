@@ -11,6 +11,9 @@ import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.content.res.Configuration
+import android.os.Build
+import android.view.WindowInsets
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -85,6 +88,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.statusBarColor = Color.rgb(10, 17, 29)
         window.navigationBarColor = Color.rgb(10, 17, 29)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) window.setDecorFitsSystemWindows(false)
         tts = TextToSpeech(this, this)
         createUi()
     }
@@ -97,8 +101,28 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
             setBackgroundColor(Color.rgb(10, 17, 29))
         }
         setContentView(root)
+        root.setOnApplyWindowInsetsListener { v, insets ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val safe = insets.getInsets(WindowInsets.Type.statusBars() or
+                    WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout())
+                val keyboard = insets.getInsets(WindowInsets.Type.ime())
+                v.setPadding(dp(10) + safe.left, safe.top + dp(6),
+                    dp(10) + safe.right, maxOf(keyboard.bottom, safe.bottom) + dp(8))
+            } else {
+                @Suppress("DEPRECATION")
+                v.setPadding(dp(10) + insets.systemWindowInsetLeft,
+                    dp(6) + insets.systemWindowInsetTop, dp(10) + insets.systemWindowInsetRight,
+                    dp(8) + insets.systemWindowInsetBottom)
+            }
+            insets
+        }
+        root.requestApplyInsets()
 
-        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val tabs = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+            background = roundedPanel(0xFF14263A.toInt(), dp(18))
+        }
         tabs.addView(btn("← Chat") { finish() }, weighted())
         tabs.addView(btn("Codex") { setMode(0) }, weighted())
         tabs.addView(btn("Desktop") { setMode(1) }, weighted())
@@ -153,7 +177,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
             setPadding(dp(7), dp(8), dp(7), dp(10))
         }
         transcriptScroll.addView(transcript)
-        codexPane.addView(transcriptScroll, weighted())
+        codexPane.addView(transcriptScroll, paneParams())
         append("Tip", "To view your existing Windows Codex CLI/App Server chats, connect the secure Windows endpoint. ChatGPT Desktop's proprietary chats may not all be available.")
 
         val composer = LinearLayout(this).apply {
@@ -215,7 +239,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
             }
             webChromeClient = WebChromeClient()
         }
-        desktopPane.addView(desktopWeb, weighted())
+        desktopPane.addView(desktopWeb, paneParams())
         setMode(0)
     }
 
@@ -638,14 +662,23 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         textSize = 13f
         setTextColor(Color.WHITE)
         setHintTextColor(0xFF9EAEC0.toInt())
-        setPadding(dp(9), dp(5), dp(9), dp(5))
+        setPadding(dp(12), dp(10), dp(12), dp(10))
+        background = roundedPanel(0xFF1C3147.toInt(), dp(12))
     }
     private fun btn(title: String, onClick: (Button) -> Unit) = Button(this).apply {
         text = title
         isAllCaps = false
-        textSize = 11f
+        textSize = 12f
+        minHeight = dp(44)
+        minimumHeight = dp(44)
+        setTextColor(Color.WHITE)
+        backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF30445D.toInt())
+        setPadding(dp(8), 0, dp(8), 0)
         setOnClickListener { onClick(this) }
     }
+
+    private fun roundedPanel(color: Int, corners: Int): GradientDrawable =
+        GradientDrawable().apply { setColor(color); cornerRadius = corners.toFloat() }
     private fun weighted() = LinearLayout.LayoutParams(
         0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
     )
