@@ -106,7 +106,6 @@ class MainActivity : Activity() {
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
             isSaveEnabled = true
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
             overScrollMode = View.OVER_SCROLL_NEVER
 
             settings.apply {
@@ -170,7 +169,12 @@ class MainActivity : Activity() {
                     view: WebView?, handler: SslErrorHandler?, error: SslError?
                 ) {
                     handler?.cancel()
-                    showLoadError(getString(R.string.secure_connection_failed))
+                    // Report a whole-page error only when the main document is impacted.
+                    // A blocked subresource should not hide a working conversation.
+                    val failingUrl = error?.url ?: ""
+                    if (failingUrl == browser.url || UrlPolicy.isInternal(failingUrl) && browser.url == null) {
+                        showLoadError(getString(R.string.secure_connection_failed))
+                    }
                 }
 
                 override fun onRenderProcessGone(
@@ -349,6 +353,14 @@ class MainActivity : Activity() {
             textSize = 12f
             setTextColor(getColor(R.color.body_text))
             setPadding(0, 0, 0, dp(18))
+        })
+        layout.addView(Button(this).apply {
+            text = getString(R.string.reload_chat)
+            isAllCaps = false
+            setOnClickListener {
+                errorOverlay?.visibility = View.GONE
+                browser.reload()
+            }
         })
         layout.addView(Button(this).apply {
             text = getString(R.string.open_browser)
