@@ -39,6 +39,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -60,6 +61,7 @@ class MainActivity : Activity() {
     private lateinit var browser: WebView
     private lateinit var progress: ProgressBar
     private lateinit var menuButton: TextView
+    private val toolbarHeight by lazy { dp(44) }
     private var errorOverlay: View? = null
     private var pendingFiles: ValueCallback<Array<Uri>>? = null
     private var pendingMediaRequest: PermissionRequest? = null
@@ -92,7 +94,7 @@ class MainActivity : Activity() {
         configureSafeArea()
         makeBrowser()
         addLoadingBar()
-        addSettingsHandle()
+        addAppToolbar()
         updateScreenAwake()
 
         if (savedInstanceState == null || browser.restoreState(savedInstanceState) == null) {
@@ -288,7 +290,7 @@ class MainActivity : Activity() {
         WebView.setWebContentsDebuggingEnabled(debug)
         root.addView(browser, 0, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
-        ))
+        ).apply { topMargin = toolbarHeight })
     }
 
     private fun addLoadingBar() {
@@ -301,27 +303,40 @@ class MainActivity : Activity() {
         }
         root.addView(progress, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(3), Gravity.TOP
-        ))
+        ).apply { topMargin = toolbarHeight })
     }
 
-    private fun addSettingsHandle() {
-        menuButton = TextView(this).apply {
-            text = "✦"
-            textSize = 18f
-            gravity = Gravity.CENTER
+    /** Dedicated native toolbar: never overlays ChatGPT image/download controls. */
+    private fun addAppToolbar() {
+        val bar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(getColor(R.color.background))
+            setPadding(dp(13), 0, dp(5), 0)
+        }
+        bar.addView(TextView(this).apply {
+            text = "TONG GPT"
+            textSize = 12f
+            letterSpacing = 0.13f
             setTextColor(getColor(R.color.aqua))
-            alpha = 0.58f
+            gravity = Gravity.CENTER_VERTICAL
+            contentDescription = "Tong GPT app toolbar"
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        menuButton = TextView(this).apply {
+            text = "⋮"
+            textSize = 26f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
             background = roundedSurface()
-            contentDescription = getString(R.string.settings)
+            contentDescription = "Tong GPT menu and About app"
             isClickable = true
             isFocusable = true
             setOnClickListener { showSettings() }
         }
-        root.addView(menuButton, FrameLayout.LayoutParams(dp(32), dp(32),
-            Gravity.TOP or Gravity.END).apply {
-                topMargin = dp(5)
-                marginEnd = dp(5)
-            })
+        bar.addView(menuButton, LinearLayout.LayoutParams(dp(46), dp(40)))
+        root.addView(bar, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, toolbarHeight, Gravity.TOP
+        ))
     }
 
     private fun showSettings() {
@@ -388,9 +403,42 @@ class MainActivity : Activity() {
             setTextColor(getColor(R.color.body_text))
             setPadding(0, dp(18), 0, 0)
         })
+        layout.addView(Button(this).apply {
+            text = getString(R.string.about_app)
+            isAllCaps = false
+            setOnClickListener { showAboutApp() }
+        })
+        layout.addView(Button(this).apply {
+            text = getString(R.string.test_microphone)
+            isAllCaps = false
+            setOnClickListener { testMicrophone() }
+        })
+        val scroll = ScrollView(this).apply {
+            isFillViewport = false
+            addView(layout)
+        }
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.settings))
-            .setView(layout)
+            .setView(scroll)
+            .setPositiveButton(getString(R.string.done), null)
+            .show()
+    }
+
+    private fun showAboutApp() {
+        val version = try {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (_: Exception) { "Unknown" }
+        AlertDialog.Builder(this)
+            .setTitle("About Tong GPT")
+            .setMessage(
+                "Tong GPT · Version " + version + "\n" +
+                "Developed by ParmTech\n\n" +
+                "Independent Android app for the official ChatGPT website, " +
+                "with optional Windows Codex Remote. Not affiliated with or endorsed by OpenAI.\n\n" +
+                "Website voice, sign-in and downloads may vary by Android System WebView version. " +
+                "Use the external browser fallback if a web feature is not compatible."
+            )
             .setPositiveButton(getString(R.string.done), null)
             .show()
     }
