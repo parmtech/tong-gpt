@@ -161,6 +161,9 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         connectForm.addView(btn("Connect Codex securely") { connect() })
 
         val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        tools.addView(btn("Pair") {
+            connectForm.visibility = if (connectForm.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }, weighted())
         tools.addView(btn("Chats") { listThreads() }, weighted())
         tools.addView(btn("New") { newThread() }, weighted())
         tools.addView(btn("Stop") { stopTurn() }, weighted())
@@ -326,6 +329,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
                         }
                         sendJson(JSONObject().put("method", "initialized")
                             .put("params", JSONObject()))
+                        connectForm.visibility = View.GONE
                         listThreads()
                     }
                 }
@@ -337,6 +341,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
                 runOnUiThread {
                     if (webSocket === ws) {
                         connected = false
+                        connectForm.visibility = View.VISIBLE
                         status("Codex connection failed (" + error.javaClass.simpleName + "). Check Tailscale, WSS and token.")
                     }
                 }
@@ -345,6 +350,7 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
                 runOnUiThread {
                     if (webSocket === ws) {
                         connected = false
+                        connectForm.visibility = View.VISIBLE
                         status("Codex disconnected.")
                     }
                 }
