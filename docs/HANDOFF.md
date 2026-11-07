@@ -109,3 +109,28 @@
   assigned width=0); responsive split portrait/landscape.
 - v0.4.0-dev test/lint/build through GitHub Actions; physical-device voice and
   download must be tested with screenshots before claiming production-ready.
+
+
+## v0.5.0-dev — UI, ChatGPT download and voice repairs (2026-11-08)
+Root cause identified from user screenshots:
+- WindowsRemoteActivity root did not honour Android 15/16 edge-to-edge status bar.
+- Remote transcriptScroll and desktopWeb still used width=0 weighted layout, so neither chat history nor desktop displayed even after outer pane fix.
+- ChatGPT Settings opened Codex Web in the background without closing its own dialog.
+- ChatGPT website itself sometimes displays "Failed to download file" before Android WebView's DownloadListener runs. Standard DownloadManager and blob-only handlers are insufficient for all generated files.
+- Embedded ChatGPT WebRTC voice can claim microphone is unavailable even after Android permission; ordinary Android apps CANNOT force-stop unrelated apps or override microphone privacy controls.
+
+Changes:
+- Remote root now applies status/nav/cutout/IME insets; transcript and desktop views correctly use MATCH_PARENT width and weighted HEIGHT; pairing form collapses once connected, can reopen with Pair.
+- Settings rebuilt into compact dark scrollable sections and dismisses before navigation/reload.
+- Native toolbar speech mic invokes Android system RecognizerIntent. User edits transcript, optionally inserts into ChatGPT composer via a one-shot user-triggered script (never reads the page), or copies it to clipboard; never auto-sends.
+- NativeFileDownloader uses bounded streaming HTTPS with authenticated ChatGPT cookies, origin-scoped credential forwarding, manual redirects, Referer, MIME and HTML/login-page rejection, MediaStore Downloads/Tong GPT.
+- ChatGPT blob/data saver extended to PDF/ZIP/DOCX/TXT and common images up to 25 MB. WebView long-press on a link/image can show native Save/Open/Copy; this is a fallback when website downloads do not invoke the WebView download event.
+- Optional browser-compatibility user-agent toggle, default OFF, intended for testing site feature detection. Reloads page when changed.
+- Based on independent implementation and public Android documentation; consulted MIT-licensed WebGPT project (https://github.com/MrHuaweiFan/WebGPT) as a design reference for native HTTP downloads and WebView compatibility.
+
+Crucial caveats:
+- Native speech typing is not ChatGPT's full-duplex Voice conversation. WebRTC voice parity is NOT guaranteed.
+- An expired/unauthorized ChatGPT attachment is not recoverable by the client; user may need to regenerate the file or open in Chrome.
+- Download fetch supports only user-triggered trusted OpenAI/ChatGPT URLs; not every in-page JavaScript-generated download can be intercepted.
+- Actual phone download, microphone, login and Codex Remote integration still require device QA.
+- Android debug signing may require uninstalling earlier APK, losing local WebView login.
