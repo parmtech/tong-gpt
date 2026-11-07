@@ -41,3 +41,19 @@ External-browser sign-in does not share the embedded WebView cookie jar.
 - [ ] Split mode shows Codex and Windows screen simultaneously
 - [ ] App handles TLS error, incorrect token, no network, unavailable PC
 - [ ] No proprietary ChatGPT Android features falsely claimed
+
+
+## v0.4 UI, download and microphone
+- [ ] No ✦ star overlaps ChatGPT download icon, header, share button or image viewer.
+- [ ] Dedicated Tong GPT toolbar has menu, and Settings > About app appears.
+- [ ] Settings scrolls on small phones and landscape.
+- [ ] Chat input and image preview stay inside display cutout and navigation safe area.
+- [ ] User-generated PNG/JPG WebP blob image saves to Downloads / Tong GPT.
+- [ ] Normal HTTPS download still uses DownloadManager.
+- [ ] Unsupported/oversized blob gives a useful error without crashing or freezing.
+- [ ] Download from a non-ChatGPT origin does not activate privileged blob handler.
+- [ ] Microphone diagnostic responds and releases capture promptly.
+- [ ] If ChatGPT Voice shows another-app-microphone warning, close recorder apps
+  and retest in Chrome to isolate Android WebView incompatibility.
+- [ ] Windows Remote Codex/desktop panels have nonzero width in portrait.
+- [ ] Split uses portrait stacked rows / landscape side-by-side columns.
