@@ -43,14 +43,16 @@ internal class SecureCodexToken(private val context: Context) {
         }
     }
 
-    fun read(): String? = try {
+    fun read(): String? {
+        return try {
         val ivString = prefs.getString("iv", null) ?: return null
         val ciphertextString = prefs.getString("ciphertext", null) ?: return null
         val iv = Base64.decode(ivString, Base64.NO_WRAP)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
         String(cipher.doFinal(Base64.decode(ciphertextString, Base64.NO_WRAP)), Charsets.UTF_8)
-    } catch (_: Exception) { null }
+        } catch (_: Exception) { null }
+    }
 
     fun clear() = prefs.edit().clear().apply()
 }
