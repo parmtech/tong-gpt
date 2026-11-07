@@ -64,6 +64,7 @@ class MainActivity : Activity() {
     private lateinit var root: FrameLayout
     private lateinit var browser: WebView
     private lateinit var progress: ProgressBar
+    private var blobSaver: BlobImageSaver? = null
     private lateinit var menuButton: TextView
     private val toolbarHeight by lazy { dp(44) }
     private var errorOverlay: View? = null
@@ -290,6 +291,7 @@ class MainActivity : Activity() {
                 downloadFile(url, userAgent, contentDisposition, mimeType)
             }
         }
+        blobSaver = BlobImageSaver(this, browser).also { it.install() }
         val debug = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         WebView.setWebContentsDebuggingEnabled(debug)
         root.addView(browser, 0, FrameLayout.LayoutParams(
@@ -550,6 +552,13 @@ class MainActivity : Activity() {
     private fun downloadFile(
         url: String, userAgent: String, contentDisposition: String?, mimeType: String?
     ) {
+        val suggested = URLUtil.guessFileName(url, contentDisposition, mimeType)
+        if (url.startsWith("blob:", ignoreCase = true) ||
+            url.startsWith("data:", ignoreCase = true)) {
+            if (blobSaver?.handle(url, suggested) == true) return
+            toast("Cannot save this image here. Use Chrome instead.")
+            return
+        }
         val uri = try { Uri.parse(url) } catch (_: Exception) { return }
         if (uri.scheme != "https") {
             toast(getString(R.string.unsupported_download))
@@ -560,7 +569,6 @@ class MainActivity : Activity() {
             return
         }
         try {
-            val suggested = URLUtil.guessFileName(url, contentDisposition, mimeType)
             val safeName = suggested.replace(Regex("[^a-zA-Z0-9._() -]"), "_")
                 .take(100).ifBlank { "TongGPT-download" }
             val request = DownloadManager.Request(uri).apply {
