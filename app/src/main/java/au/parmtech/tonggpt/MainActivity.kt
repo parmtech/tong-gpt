@@ -53,7 +53,7 @@ class MainActivity : Activity() {
         private const val PREFS = "tong_gpt_preferences"
         private const val PREF_KEEP_AWAKE = "keep_screen_awake"
         private const val PICK_FILE = 121
-        private const val REQUEST_MIC = 122
+        private const val REQUEST_MEDIA = 122
     }
 
     private lateinit var root: FrameLayout
@@ -62,7 +62,10 @@ class MainActivity : Activity() {
     private lateinit var menuButton: TextView
     private var errorOverlay: View? = null
     private var pendingFiles: ValueCallback<Array<Uri>>? = null
-    private var pendingMicRequest: PermissionRequest? = null
+    private var pendingMediaRequest: PermissionRequest? = null
+    private var pendingMediaResources: Array<String> = emptyArray()
+    private var fullScreenView: View? = null
+    private var fullScreenCallback: WebChromeClient.CustomViewCallback? = null
     private var keepAwake = true
     private var lastBackTime = 0L
 
@@ -102,6 +105,8 @@ class MainActivity : Activity() {
             setBackgroundColor(getColor(R.color.background))
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
+            isSaveEnabled = true
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
             overScrollMode = View.OVER_SCROLL_NEVER
 
             settings.apply {
@@ -212,24 +217,62 @@ class MainActivity : Activity() {
                     if (request == null) return
                     runOnUiThread {
                         val origin = request.origin?.toString() ?: ""
+                        val requested = request.resources.toSet()
+                        val allowedResources = setOf(
+                            PermissionRequest.RESOURCE_AUDIO_CAPTURE,
+                            PermissionRequest.RESOURCE_VIDEO_CAPTURE
+                        )
+                        // Never grant resources from other sites, or unknown WebView resources.
                         if (!UrlPolicy.isTrustedChatGptOrigin(origin) ||
-                            request.resources.toSet() != setOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                            requested.isEmpty() || !allowedResources.containsAll(requested)) {
                             request.deny()
                             return@runOnUiThread
                         }
-                        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-                            PackageManager.PERMISSION_GRANTED) {
-                            request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+
+                        val missing = mutableListOf<String>()
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in requested &&
+                            checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                            missing.add(Manifest.permission.RECORD_AUDIO)
+                        }
+                        if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in requested &&
+                            checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                            missing.add(Manifest.permission.CAMERA)
+                        }
+                        if (missing.isEmpty()) {
+                            request.grant(request.resources)
                         } else {
-                            pendingMicRequest?.deny()
-                            pendingMicRequest = request
-                            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_MIC)
+                            pendingMediaRequest?.deny()
+                            pendingMediaRequest = request
+                            pendingMediaResources = request.resources
+                            requestPermissions(missing.toTypedArray(), REQUEST_MEDIA)
                         }
                     }
                 }
 
                 override fun onPermissionRequestCanceled(request: PermissionRequest?) {
-                    if (pendingMicRequest == request) pendingMicRequest = null
+                    if (pendingMediaRequest == request) {
+                        pendingMediaRequest = null
+                        pendingMediaResources = emptyArray()
+                    }
+                }
+
+                // The web player can request a dedicated fullscreen view for video.
+                override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                    if (view == null || callback == null || fullScreenView != null) {
+                        callback?.onCustomViewHidden()
+                        return
+                    }
+                    fullScreenView = view
+                    fullScreenCallback = callback
+                    root.addView(view, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    menuButton.visibility = View.GONE
+                }
+
+                override fun onHideCustomView() {
+                    exitFullScreenPlayer()
                 }
             }
 
@@ -396,6 +439,14 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun exitFullScreenPlayer() {
+        fullScreenView?.let { root.removeView(it) }
+        fullScreenView = null
+        fullScreenCallback?.onCustomViewHidden()
+        fullScreenCallback = null
+        if (::menuButton.isInitialized) menuButton.visibility = View.VISIBLE
+    }
+
     private fun openExternal(url: String) {
         if (!UrlPolicy.canLaunchExternally(url)) {
             toast(getString(R.string.link_blocked))
@@ -491,20 +542,28 @@ class MainActivity : Activity() {
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_MIC) {
-            pendingMicRequest?.let {
-                if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                    it.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+        if (requestCode == REQUEST_MEDIA) {
+            pendingMediaRequest?.let { request ->
+                val allGranted = permissions.indices.all { index ->
+                    grantResults.getOrNull(index) == PackageManager.PERMISSION_GRANTED
+                }
+                if (allGranted && permissions.isNotEmpty()) {
+                    request.grant(pendingMediaResources)
                 } else {
-                    it.deny()
+                    request.deny()
                 }
             }
-            pendingMicRequest = null
+            pendingMediaRequest = null
+            pendingMediaResources = emptyArray()
         }
     }
 
     @Deprecated("Platform back navigation; keeps WebView history intact.")
     override fun onBackPressed() {
+        if (fullScreenView != null) {
+            exitFullScreenPlayer()
+            return
+        }
         if (::browser.isInitialized && browser.canGoBack()) {
             browser.goBack()
             return
@@ -521,8 +580,10 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         pendingFiles?.onReceiveValue(null)
         pendingFiles = null
-        pendingMicRequest?.deny()
-        pendingMicRequest = null
+        pendingMediaRequest?.deny()
+        pendingMediaRequest = null
+        pendingMediaResources = emptyArray()
+        if (fullScreenView != null) exitFullScreenPlayer()
         if (::browser.isInitialized) {
             root.removeView(browser)
             browser.stopLoading()
