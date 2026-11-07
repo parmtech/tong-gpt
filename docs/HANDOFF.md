@@ -88,3 +88,24 @@
 - No full-duplex ChatGPT Live voice.
 - CI compiled tests/lint and generated experimental v0.3.0-dev debug APK.
 - Real Windows pairing, voice and screen streaming MUST be tested on-device.
+
+
+## v0.4.0-dev UX, image download and microphone recovery (2026-11-08)
+- Replaced floating star overlay with dedicated 44dp native header row; its menu
+  no longer covers ChatGPT's image download, close, sharing or header controls.
+- About Tong GPT moved to a clear Settings > About app action.
+- Settings content scrollable on short/narrow screens.
+- WebView starts below toolbar and uses safe Android status/navigation/IME insets.
+- Added WebView blob/data image downloader using origin-scoped AndroidX WebKit
+  WebMessageListener restricted to HTTPS chatgpt.com main frames.
+- User-triggered downloads only; no credentials, chat messages or login DOM copied.
+- Max 10 MiB; JPEG/PNG/WebP/GIF/AVIF/PDF only. Save to Android MediaStore
+  Downloads/Tong GPT on Android 10+, with no new storage permission.
+- Original normal HTTPS DownloadManager path retained.
+- Added microphone test in Settings; short native AudioRecord sampling
+  distinguishes Android microphone accessibility from WebView WebRTC issues.
+- Added Chrome voice fallback; cannot override another app's microphone lock.
+- Fixed Windows Remote invisible-pane bug (vertical LinearLayout weights were
+  assigned width=0); responsive split portrait/landscape.
+- v0.4.0-dev test/lint/build through GitHub Actions; physical-device voice and
+  download must be tested with screenshots before claiming production-ready.
