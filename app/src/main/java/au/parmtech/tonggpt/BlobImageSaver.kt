@@ -20,7 +20,7 @@ import java.util.UUID
 
 /** User-initiated ChatGPT blob-image saver. Never reads page DOM, cookies or login data. */
 internal class BlobImageSaver(private val activity: Activity, private val web: WebView) {
-    companion object { private const val MAX = 10 * 1024 * 1024 }
+    companion object { private const val MAX = 25 * 1024 * 1024 }
     private val handler = Handler(Looper.getMainLooper())
     private var activeId: String? = null
     private var activeName: String? = null
@@ -43,8 +43,8 @@ internal class BlobImageSaver(private val activity: Activity, private val web: W
                     activeName = null
                     when (data.optString("status")) {
                         "ok" -> saveImage(name, data.optString("data"))
-                        "size" -> note("Image larger than 10 MB. Try Chrome.")
-                        else -> note("Image download failed. Try Chrome.")
+                        "size" -> note("File larger than 25 MB. Try Chrome.")
+                        else -> note("File download failed. Try Chrome.")
                     }
                 }
             }
@@ -105,14 +105,14 @@ internal class BlobImageSaver(private val activity: Activity, private val web: W
             .replace("__URL__", JSONObject.quote(url))
             .replace("__MAX__", MAX.toString())
         web.evaluateJavascript(script, null)
-        note("Saving image to Downloads…")
+        note("Saving file to Downloads…")
         return true
     }
 
     private fun saveImage(originalName: String, dataUrl: String) {
         val comma = dataUrl.indexOf(',')
         if (comma < 0 || comma > 80 || dataUrl.length > MAX * 4 / 3 + 256) {
-            note("Unsupported or oversized image. Try Chrome.")
+            note("Unsupported or oversized file. Try Chrome.")
             return
         }
         val mime = when (dataUrl.substring(0, comma).lowercase()) {
@@ -122,11 +122,15 @@ internal class BlobImageSaver(private val activity: Activity, private val web: W
             "data:image/gif;base64" -> "image/gif"
             "data:image/avif;base64" -> "image/avif"
             "data:application/pdf;base64" -> "application/pdf"
+            "data:application/zip;base64", "data:application/x-zip-compressed;base64" -> "application/zip"
+            "data:application/octet-stream;base64" -> "application/octet-stream"
+            "data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "data:text/plain;base64" -> "text/plain"
             else -> null
         }
-        if (mime == null) { note("Unsupported image format. Try Chrome."); return }
+        if (mime == null) { note("Unsupported file format. Try Chrome."); return }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            note("Use Chrome to save images on Android 9 or older.")
+            note("Use Chrome to save files on Android 9 or older.")
             return
         }
         val extension = when (mime) {
@@ -135,7 +139,11 @@ internal class BlobImageSaver(private val activity: Activity, private val web: W
             "image/webp" -> ".webp"
             "image/gif" -> ".gif"
             "image/avif" -> ".avif"
-            else -> ".pdf"
+            "application/pdf" -> ".pdf"
+            "application/zip" -> ".zip"
+            "text/plain" -> ".txt"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ".docx"
+            else -> ".bin"
         }
         val name = originalName.substringBeforeLast('.').ifBlank { "ChatGPT-image" }
             .replace(Regex("[^a-zA-Z0-9._() -]"), "_").take(55)
@@ -164,7 +172,7 @@ internal class BlobImageSaver(private val activity: Activity, private val web: W
                 destination?.let {
                     try { activity.contentResolver.delete(it, null, null) } catch (_: Exception) {}
                 }
-                notifyUi("Could not save the image. Try Chrome.")
+                notifyUi("Could not save the file. Try Chrome.")
             }
         }.start()
     }
