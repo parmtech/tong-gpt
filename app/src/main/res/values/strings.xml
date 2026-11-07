@@ -22,4 +22,6 @@
     <string name="browser_unavailable">No external browser found.</string>
     <string name="back_to_exit">Press Back again to exit Tong GPT</string>
     <string name="windows_remote">Windows Codex Remote · Voice + Desktop</string>
+    <string name="about_app">About Tong GPT</string>
+    <string name="test_microphone">Test microphone / Voice help</string>
 </resources>
