@@ -81,6 +81,22 @@ The Android project is in [app/](app/). Every source update runs tests, Android 
 
 **Important:** a CI-generated debug APK is experimental and may not support OAuth inside Android WebView. It is not an official OpenAI app.
 
+## Windows Remote beta
+
+Open Tong GPT → Settings (✦) → **Windows Codex Remote · Voice + Desktop**.
+The included [Windows starter script](windows/start-codex-remote.ps1) connects your local Codex App Server
+through private Tailscale Serve HTTPS; credentials are generated on your own Windows PC.
+For live desktop screen/control, install and configure your own authenticated
+[MeshCentral](https://github.com/Ylianst/MeshCentral) Windows service, then open its HTTPS portal
+in Tong GPT's integrated **Desktop** tab. **Split** lets you view Codex events and the Windows desktop together.
+
+Voice control uses Android speech-to-text and text-to-speech, **not** OpenAI's private
+full-duplex Live Voice protocol. Approvals require an explicit user decision.
+The official ChatGPT desktop app's proprietary sessions may not appear in the Codex
+App Server's local thread listing.
+
+See [Windows Remote setup, security and QA](docs/WINDOWS_REMOTE.md).
+
 ## Contributing
 
 Suggestions, bug reports, and pull requests are welcome. Please avoid uploading credentials, session cookies, or private conversations into issues.
