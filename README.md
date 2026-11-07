@@ -135,3 +135,16 @@ ChatGPT and OpenAI are trademarks of OpenAI. The website, AI models, accounts, s
 
 
 **Experimental debug signing:** APK update may require uninstalling the previous build; this clears the in-app WebView login session. Use a persistent secure release signing key for upgrade-safe public distribution.
+
+
+## New in v0.5.0-dev (experimental)
+This iteration responds to actual Android screenshots:
+- Windows Remote history and live desktop width bug fixed, with safe insets around Android status/navigation bars.
+- Codex Web selection dismisses the settings panel before navigation.
+- Native microphone button in Tong GPT's top bar supports **speech-to-text** via Android's installed recognizer. You can review and insert text into the ChatGPT composer, or copy it. It does not claim to replace OpenAI Live full-duplex Voice.
+- ChatGPT trusted HTTPS file downloads are also retried with a native, signed-in-cookie-aware streaming downloader that saves to **Downloads / Tong GPT**; long-press on direct links for Save link. Generated image/data/blob handler accepts supported ZIP/PDF/DOCX/TXT/image types up to 25 MB.
+- Experimental browser compatibility toggle in Settings, OFF by default. Switch it on only to test website voice/download issues and turn it off if login breaks.
+
+**Limitations:** A screenshot showing "Failed to download file" is often a ChatGPT website-level failure before the Android download listener sees the link. Native fallback can help with valid downloadable links; it cannot restore files that no longer exist or links whose authorization expired. An ordinary app cannot force other applications to release the Android microphone. Try the in-app native 🎙 typing control, or a browser/official ChatGPT app for full Voice.
+
+**Design reference:** [WebGPT](https://github.com/MrHuaweiFan/WebGPT) (MIT) informed the origin-specific Android WebView download and user-agent compatibility approach; this project's implementation is independent.
