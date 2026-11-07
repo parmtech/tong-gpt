@@ -57,3 +57,20 @@ External-browser sign-in does not share the embedded WebView cookie jar.
   and retest in Chrome to isolate Android WebView incompatibility.
 - [ ] Windows Remote Codex/desktop panels have nonzero width in portrait.
 - [ ] Split uses portrait stacked rows / landscape side-by-side columns.
+
+
+## v0.5 critical QA based on user screenshots
+- [ ] Windows Codex Remote top tabs appear below Android status bar (5G/time icons).
+- [ ] Chat messages and desktop web contents display (no 0-width pane).
+- [ ] Pairing form collapses after successful connection; Pair re-opens it.
+- [ ] Keyboard does not obscure Codex composer; portrait and landscape Split work.
+- [ ] Selecting Codex Web / Windows Remote / Reload from Settings closes menu first.
+- [ ] Native top 🎙 prompts system recognizer; editable speech transcript can insert into ChatGPT input, else copies to clipboard. Nothing sends automatically.
+- [ ] Test microphone diagnostic still runs; mic release is immediate.
+- [ ] Browser compatibility toggle switches UA, reloads, and can be reverted.
+- [ ] Download 2.7MB JPG via ChatGPT inline link (including when site displays failed-download banner); test long-press Save linked file.
+- [ ] Download ZIP and PDF and verify actual bytes are not HTML login pages.
+- [ ] Test signed link redirect and logged-in cookie use; no cookies sent to third-party host.
+- [ ] Test revoked/expired file shows clear actionable error; regenerate rather than falsely claiming success.
+- [ ] Test 25MB blob size limit; unsupported MIME gracefully falls back.
+- [ ] No change in chat session on upgrade unless Android requires uninstall for debug signing.
