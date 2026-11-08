@@ -88,3 +88,17 @@ External-browser sign-in does not share the embedded WebView cookie jar.
 - [ ] Close scanner, deny permission, cancel confirmation: no connection starts.
 - [ ] QR credentials are not included in GitHub, logs or screenshots.
 - [ ] Tailscale private-only access, no public TCP exposure and TLS verification.
+
+
+## v0.7 camera and voice regression
+- [ ] Enhanced Google Scanner automatically opens, auto-zooms and reads stylized official QR or offers fallback.
+- [ ] First-time Google Play services module download/unsupported device leads to usable embedded camera scanner.
+- [ ] ZXing fallback tries both normal/inverted QR; user can hold steady and rescan.
+- [ ] The scanner distinguishes QR decoding from pairing: official QR NEVER claims Tong GPT remote is connected.
+- [ ] Official pairing requests user sign in to the same ChatGPT account/workspace in the official mobile app.
+- [ ] QR scanner opening while ChatGPT Web is logged out explains that pairing and web sign-in are separate.
+- [ ] Settings > Log in to ChatGPT navigates to the website's login page.
+- [ ] Native speech allows Punjabi, Hindi, English Australia, and device-language selection.
+- [ ] Failed Google recognition shows useful error and does not auto-send anything.
+- [ ] Compare Android native microphone diagnostic with official ChatGPT Voice and Chrome on device.
+- [ ] Uninstalling previous debug build may log out user; note until stable signing is in place.
