@@ -134,3 +134,21 @@ Crucial caveats:
 - Download fetch supports only user-triggered trusted OpenAI/ChatGPT URLs; not every in-page JavaScript-generated download can be intercepted.
 - Actual phone download, microphone, login and Codex Remote integration still require device QA.
 - Android debug signing may require uninstalling earlier APK, losing local WebView login.
+
+
+## v0.6.0-dev — native Windows Codex pairing scanner
+- In-app scanner: app/src/main/java/au/parmtech/tonggpt/PairingQrScannerActivity.kt
+- QR parser: app/src/main/java/au/parmtech/tonggpt/PairingCodeParser.kt
+- Tests: app/src/test/java/au/parmtech/tonggpt/PairingCodeParserTest.kt
+- Windows-local QR creator: windows/generate-pairing-qr.py
+- Android dependency: com.journeyapps:zxing-android-embedded:4.3.0
+- Settings → Scan Windows Codex QR opens Windows Remote with scanner immediately.
+  Windows Remote also has a QR scanner button; camera permission is requested.
+- Support only versioned tonggpt://pair payloads using WSS and a strong bearer
+  token; review hostname with explicit approval before saving in Android Keystore.
+- Official ChatGPT Desktop QR is detected and can optionally be opened with
+  official ChatGPT Android app. It CANNOT pair Tong GPT with proprietary OpenAI
+  Remote sessions, nor silently share the user's official Codex Remote chats.
+- QR payload is never logged, printed or uploaded by the Android client.
+- A production-like pairing handshake and Windows integration require real-device
+  verification; code build and unit tests are necessary but not sufficient.
