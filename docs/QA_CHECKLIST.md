@@ -74,3 +74,17 @@ External-browser sign-in does not share the embedded WebView cookie jar.
 - [ ] Test revoked/expired file shows clear actionable error; regenerate rather than falsely claiming success.
 - [ ] Test 25MB blob size limit; unsupported MIME gracefully falls back.
 - [ ] No change in chat session on upgrade unless Android requires uninstall for debug signing.
+
+
+## v0.6 native QR scanner
+- [ ] Native QR scanner launches inside Tong GPT and asks for camera permission.
+- [ ] QR view respects camera notch, navigation bar, and keyboard safe areas.
+- [ ] Unknown QR is rejected without opening any link.
+- [ ] Official ChatGPT Desktop remote QR shows honest handoff prompt, not
+  a fake 'paired' success; explicit action opens official ChatGPT mobile app.
+- [ ] Tong GPT companion QR shows only the destination hostname and asks for
+  confirmation before connecting; token remains hidden.
+- [ ] Scan actual locally-generated Windows QR; endpoint and token connect using WSS.
+- [ ] Close scanner, deny permission, cancel confirmation: no connection starts.
+- [ ] QR credentials are not included in GitHub, logs or screenshots.
+- [ ] Tailscale private-only access, no public TCP exposure and TLS verification.
