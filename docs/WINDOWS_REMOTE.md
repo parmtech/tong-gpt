@@ -75,3 +75,47 @@ MeshCentral is **not embedded or copied into our repository**. Tong GPT loads yo
 - https://github.com/Ylianst/MeshCentral
 - https://docs.meshcentral.com/install/windows/
 - https://tailscale.com/docs/reference/tailscale-cli/serve
+
+
+## v0.6 — Embedded QR scanner (experimental)
+Tong GPT now includes a native on-device barcode/QR scanner under **Settings → Scan Windows Codex QR**
+and **Windows Remote → Scan pairing QR / QR**.
+
+**Two QR types must not be confused:**
+1. A **ChatGPT Desktop official QR**, as shown by Settings → Connections → Control this PC,
+   belongs to OpenAI's private pairing service. Scanning it in Tong GPT recognizes the
+   official link and offers to hand off to the installed official ChatGPT Android app.
+   It DOES NOT authenticate Tong GPT or sync official remote chats inside Tong GPT.
+   OpenAI documents pairing from the official mobile app:
+   https://learn.chatgpt.com/docs/remote-connections
+2. A **Tong GPT Windows companion QR**, generated locally from our own WSS address
+   and capability token, can prefill and initiate our independent Codex App Server
+   connection after explicit user approval. It connects only to the locally configured
+   Codex CLI/App Server, not the official ChatGPT remote-control backend.
+
+### Generate the Tong GPT QR locally on Windows
+- First run `windows/start-codex-remote.ps1` and set up the authenticated
+  Codex app-server behind **private** Tailscale Serve (never Funnel).
+- Make sure the resulting private URL uses `wss://` and tailnet HTTPS.
+- Install Python and the offline QR generator dependency, if not already installed:
+  `python -m pip install "qrcode[pil]"`
+- In the checked-out Tong GPT repository, run:
+  `python windows/generate-pairing-qr.py --endpoint "wss://YOUR-HOST.YOUR-TAILNET.ts.net:8443/"`
+- The QR PNG is saved to your own Windows user profile under
+  `%USERPROFILE%\.codex\tong-gpt-pairing.png`, not to GitHub.
+- Open the PNG on the Windows screen, open Tong GPT → Scan Windows Codex QR on the
+  Android phone, point camera and inspect the host shown by the confirmation.
+- Approve Connect only for a computer you own/trust. The token is encrypted at rest
+  in Android Keystore. The PC must be online, app-server running and tailnet reachable.
+- Delete the QR PNG after pairing. Regenerate the token if anyone else saw it.
+
+Never upload/screenshot/share the private Tong GPT QR. It holds a bearer token
+that can grant remote access. The original official ChatGPT QR should also be kept
+private and scanned only with an authorised mobile app.
+
+### Scanner privacy and security
+The native QR decoder runs entirely on the Android device using
+`zxing-android-embedded`. QR contents are not sent to any scan service.
+An unknown QR is rejected; it does not automatically open websites or execute commands.
+Native camera permission is requested when opening the scanner. No remote access
+is initiated until a user confirms the target hostname. TLS remains required.
