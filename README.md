@@ -148,3 +148,22 @@ This iteration responds to actual Android screenshots:
 **Limitations:** A screenshot showing "Failed to download file" is often a ChatGPT website-level failure before the Android download listener sees the link. Native fallback can help with valid downloadable links; it cannot restore files that no longer exist or links whose authorization expired. An ordinary app cannot force other applications to release the Android microphone. Try the in-app native 🎙 typing control, or a browser/official ChatGPT app for full Voice.
 
 **Design reference:** [WebGPT](https://github.com/MrHuaweiFan/WebGPT) (MIT) informed the origin-specific Android WebView download and user-agent compatibility approach; this project's implementation is independent.
+
+
+## New in v0.6.0-dev — in-app Windows Codex QR scanner
+**Settings → Scan Windows Codex QR** or **Windows Remote → QR** now opens a
+native in-app camera scanner. Scan a locally generated **Tong GPT companion QR**
+to configure the secure Windows Codex App Server endpoint and pairing token.
+The scanner requests camera permission and shows a hostname confirmation before
+connecting. The QR is generated entirely on your Windows computer using
+[our local generator](windows/generate-pairing-qr.py) (see [setup instructions](docs/WINDOWS_REMOTE.md)).
+
+**Official ChatGPT Desktop QR codes are different.** They use OpenAI's first-party
+mobile Remote connection flow; the scanner can recognise and offer to open the
+official ChatGPT Android app, but cannot use that private QR code to pair
+Tong GPT itself or automatically import the official app's Remote chats.
+See https://learn.chatgpt.com/docs/remote-connections.
+
+The QR scan runs locally with ZXing and never sends raw pairing data to a
+barcode scanning website. This is an experimental build requiring real-device
+and real-Windows-pairing testing before claiming remote control works.
