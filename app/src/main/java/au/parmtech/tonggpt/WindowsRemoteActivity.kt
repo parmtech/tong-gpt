@@ -51,6 +51,7 @@ import java.util.concurrent.TimeUnit
 class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
     companion object {
         private const val SPEECH_REQUEST = 301
+        private const val PAIRING_QR_REQUEST = 302
         private const val PREFS = "tg_remote_windows"
     }
 
@@ -91,6 +92,9 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) window.setDecorFitsSystemWindows(false)
         tts = TextToSpeech(this, this)
         createUi()
+        if (intent?.getBooleanExtra("scan_pairing_qr", false) == true) {
+            root.post { openScanner() }
+        }
     }
 
     private fun createUi() {
@@ -158,9 +162,11 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
             setText(SecureCodexToken(this@WindowsRemoteActivity).read() ?: "")
         }
         connectForm.addView(tokenField)
+        connectForm.addView(btn("📷 Scan pairing QR") { openScanner() })
         connectForm.addView(btn("Connect Codex securely") { connect() })
 
         val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        tools.addView(btn("📷 QR") { openScanner() }, weighted())
         tools.addView(btn("Pair") {
             connectForm.visibility = if (connectForm.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }, weighted())
@@ -604,6 +610,84 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun openScanner() {
+        try {
+            startActivityForResult(
+                Intent(this, PairingQrScannerActivity::class.java), PAIRING_QR_REQUEST
+            )
+        } catch (_: ActivityNotFoundException) {
+            toast("Camera scanner is not available on this device.")
+        }
+    }
+
+    private fun handleScannedPairing(code: String) {
+        when (val result = PairingCodeParser.parse(code)) {
+            is PairingCodeParser.Parsed.Companion -> {
+                val host = try { URI(result.endpoint).host ?: "your computer" }
+                    catch (_: Exception) { "your computer" }
+                AlertDialog.Builder(this)
+                    .setTitle("Pair Tong GPT Windows Codex")
+                    .setMessage(
+                        "Connect to " + host + "?\n\n" +
+                        "This QR includes a private connection token. " +
+                        "Only scan a QR shown on a computer you own and trust. " +
+                        "No connection starts until you approve."
+                    )
+                    .setPositiveButton("Connect") { _, _ ->
+                        endpoint.setText(result.endpoint)
+                        tokenField.setText(result.token)
+                        result.desktopUrl?.let { desktopUrlField.setText(it) }
+                        connectForm.visibility = View.VISIBLE
+                        setMode(0)
+                        connect()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+            is PairingCodeParser.Parsed.Official -> {
+                AlertDialog.Builder(this)
+                    .setTitle("Official Codex Desktop QR")
+                    .setMessage(
+                        "This is the official ChatGPT device-pairing code. " +
+                        "Its connection approval uses OpenAI's official mobile app, " +
+                        "not Tong GPT's companion protocol.\n\n" +
+                        "Open it in the official ChatGPT Android app? " +
+                        "If pairing does not open automatically, scan the QR " +
+                        "again using the official app."
+                    )
+                    .setPositiveButton("Open official ChatGPT") { _, _ ->
+                        try {
+                            startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(result.link))
+                                    .setPackage("com.openai.chatgpt")
+                            )
+                        } catch (_: Exception) {
+                            AlertDialog.Builder(this)
+                                .setMessage("Open the official ChatGPT app and " +
+                                    "use Codex / Remote to scan the Windows QR.")
+                                .setPositiveButton("OK", null)
+                                .show()
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+            PairingCodeParser.Parsed.Unsupported -> {
+                AlertDialog.Builder(this)
+                    .setTitle("Unrecognized QR code")
+                    .setMessage(
+                        "Tong GPT can pair with its own Windows companion QR, " +
+                        "but cannot directly approve OpenAI's private " +
+                        "ChatGPT Desktop Remote pairing code.\n\n" +
+                        "Use the official ChatGPT app for OpenAI Remote, or " +
+                        "generate a Tong GPT companion QR on your Windows PC."
+                    )
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+
     private fun voiceInput() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -618,6 +702,10 @@ class WindowsRemoteActivity : Activity(), TextToSpeech.OnInitListener {
     @Deprecated("Uses a system speech recognition activity for user-initiated dictation.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PAIRING_QR_REQUEST && resultCode == RESULT_OK) {
+            val scanned = data?.getStringExtra(PairingQrScannerActivity.RESULT_QR_CONTENT)
+            if (!scanned.isNullOrBlank()) handleScannedPairing(scanned)
+        }
         if (requestCode == SPEECH_REQUEST && resultCode == RESULT_OK) {
             val words = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
                 ?.firstOrNull()?.trim()
