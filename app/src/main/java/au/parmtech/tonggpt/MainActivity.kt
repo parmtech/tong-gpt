@@ -423,6 +423,10 @@ class MainActivity : Activity() {
         }
 
         section("Explore")
+        action("📷 Scan Windows Codex QR") {
+            startActivity(Intent(this, WindowsRemoteActivity::class.java)
+                .putExtra("scan_pairing_qr", true))
+        }
         action("Windows Codex Remote") {
             startActivity(Intent(this, WindowsRemoteActivity::class.java))
         }
