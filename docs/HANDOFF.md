@@ -152,3 +152,21 @@ Crucial caveats:
 - QR payload is never logged, printed or uploaded by the Android client.
 - A production-like pairing handshake and Windows integration require real-device
   verification; code build and unit tests are necessary but not sufficient.
+
+
+## v0.7.0-dev (2026-11-08) — QR decode, sign-in and native voice follow-up
+
+User phone screenshots show:
+- Codex Desktop's heavily stylized dotted QR inside the local ZXing camera preview, without detection.
+- Tong GPT ChatGPT WebView logged out. A local QR scanner is independent from ChatGPT Web sign-in; this never authorizes official Remote.
+- Website dictation reports "Couldn't start dictation"; official website Voice asks for microphone permission while logged out; the separate Android/Google recognizer reports "Didn't catch that" (user speaks Punjabi/Hindi).
+Changes:
+- QR scanner now first tries Google Code Scanner 16.1.0 (on-device decoding, auto zoom). If unavailable/canceled, app retains the embedded ZXing camera scanner with TRY_HARDER and mixed normal/inverted decoding; Google module may need to download on first use.
+- QR UX explicitly explains that official OpenAI QR requires official ChatGPT app + same account/workspace; Tong GPT companion QR is an independent connection and its scanner can work without ChatGPT website login.
+- Main Settings includes Log in to ChatGPT action and clearer scanner label.
+- Native voice transcription prompts for Punjabi (pa-IN), Hindi (hi-IN), English (en-AU) or phone language. Selected language is remembered; unsuccessful recognition reports a useful message rather than silently doing nothing.
+- No claim that Google scanner can pair Tong GPT with private OpenAI remote backend. An official QR should hand off to the actual first-party app, where the user approves and signs in.
+- GitHub Actions debug APKs use ephemeral debug signing: uninstall/reinstall may erase Tong GPT WebView cookies/login. Stable upgrade-safe signing requires an owner-provided private signing key stored in GitHub Actions secrets, NEVER committed to the public repository.
+- Actual QR camera detection and official-app handoff require device testing. Screenshot QR codes can contain sensitive enrollment information: do not commit or share decoded code or pairing tokens.
+
+See https://developers.google.com/ml-kit/vision/barcode-scanning/code-scanner and https://learn.chatgpt.com/docs/remote-connections.
