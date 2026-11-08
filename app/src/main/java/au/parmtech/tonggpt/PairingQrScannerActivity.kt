@@ -16,6 +16,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.google.zxing.ResultPoint
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.DecodeHintType
+import com.journeyapps.barcodescanner.DefaultDecoderFactory
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.journeyapps.barcodescanner.BarcodeCallback
 import com.journeyapps.barcodescanner.BarcodeResult
 import com.journeyapps.barcodescanner.DecoratedBarcodeView
@@ -32,6 +38,7 @@ class PairingQrScannerActivity : Activity() {
 
     private lateinit var cameraView: DecoratedBarcodeView
     private var finished = false
+    private var googleScannerActive = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,6 +89,25 @@ class PairingQrScannerActivity : Activity() {
         root.addView(header)
 
         root.addView(TextView(this).apply {
+            text = "Official OpenAI QR requires the official ChatGPT app and login. " +
+                "Tong GPT can connect only with its own private Windows companion QR."
+            textSize = 13f
+            setTextColor(0xFF80D3D0.toInt())
+            gravity = Gravity.CENTER
+            setPadding(dp(15), dp(8), dp(15), dp(7))
+        })
+        root.addView(Button(this).apply {
+            text = "Enhanced QR scan · auto zoom"
+            isAllCaps = false
+            setOnClickListener { scanWithGoogle() }
+        })
+        root.addView(TextView(this).apply {
+            text = "Local camera scanner below · works without Google scanner module."
+            textSize = 12f
+            setTextColor(0xFF9BB4C3.toInt())
+            gravity = Gravity.CENTER
+        })
+        root.addView(TextView(this).apply {
             text = "Point your camera at the QR code shown on the Windows screen."
             textSize = 14f
             setTextColor(0xFFB6D3DE.toInt())
@@ -89,7 +115,14 @@ class PairingQrScannerActivity : Activity() {
             setPadding(dp(18), dp(12), dp(18), dp(12))
         })
         cameraView = DecoratedBarcodeView(this).apply {
-            setStatusText("QR codes are scanned locally on your phone.")
+            setStatusText("Keep the QR within the frame and hold steady.")
+            // Scan both normal and inverted high-contrast codes; slower but more reliable.
+            barcodeView.decoderFactory = DefaultDecoderFactory(
+                listOf(BarcodeFormat.QR_CODE),
+                mapOf(DecodeHintType.TRY_HARDER to true),
+                "UTF-8",
+                2 // Mixed decoder: normal and inverted camera frames.
+            )
         }
         root.addView(cameraView, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
@@ -106,15 +139,55 @@ class PairingQrScannerActivity : Activity() {
             override fun barcodeResult(result: BarcodeResult?) {
                 val content = result?.text ?: return
                 if (finished || content.isBlank() || content.length > 8192) return
-                finished = true
-                cameraView.pause()
-                setResult(RESULT_OK, Intent().putExtra(RESULT_QR_CONTENT, content))
-                finish()
+                finishWithCode(content)
             }
 
             override fun possibleResultPoints(resultPoints: MutableList<ResultPoint>?) {}
         })
         requestCamera()
+        // Google Code Scanner uses a stronger on-device detector with auto-zoom.
+        // When it is unavailable we keep the embedded ZXing scanner as fallback.
+        root.post { scanWithGoogle() }
+    }
+
+    private fun finishWithCode(code: String) {
+        if (finished || code.isBlank()) return
+        finished = true
+        cameraView.pause()
+        setResult(RESULT_OK, Intent().putExtra(RESULT_QR_CONTENT, code))
+        finish()
+    }
+
+    private fun scanWithGoogle() {
+        if (finished || googleScannerActive) return
+        googleScannerActive = true
+        cameraView.pause()
+        val options = GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .enableAutoZoom()
+            .build()
+        GmsBarcodeScanning.getClient(this, options).startScan()
+            .addOnSuccessListener { result ->
+                googleScannerActive = false
+                val value = result.rawValue
+                if (!value.isNullOrBlank() && value.length <= 8192) {
+                    finishWithCode(value)
+                } else {
+                    Toast.makeText(this, "Code scanned but contains no supported text.",
+                        Toast.LENGTH_LONG).show()
+                    requestCamera()
+                }
+            }
+            .addOnCanceledListener {
+                googleScannerActive = false
+                if (!finished) requestCamera()
+            }
+            .addOnFailureListener {
+                googleScannerActive = false
+                Toast.makeText(this, "Enhanced scanner unavailable. Use the local camera below.",
+                    Toast.LENGTH_LONG).show()
+                if (!finished) requestCamera()
+            }
     }
 
     private fun requestCamera() {
@@ -143,7 +216,7 @@ class PairingQrScannerActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::cameraView.isInitialized && !finished &&
+        if (::cameraView.isInitialized && !finished && !googleScannerActive &&
             checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             cameraView.resume()
         }
