@@ -167,3 +167,18 @@ See https://learn.chatgpt.com/docs/remote-connections.
 The QR scan runs locally with ZXing and never sends raw pairing data to a
 barcode scanning website. This is an experimental build requiring real-device
 and real-Windows-pairing testing before claiming remote control works.
+
+
+## v0.7.0-dev: QR scan and login/voice handling
+
+From a real phone test we learned that a stylized, dotted Codex Desktop QR was not decoded by our first embedded camera scanner. This version tries the auto-zoom **Google Code Scanner** first, then falls back to the original on-device ZXing scanner with a more thorough normal/inverted QR decoder. The Google module can download on first use. No decoded QR content is uploaded to an app-owned server.
+
+**Important:** The Windows Desktop official QR is not the Tong GPT companion QR. The former pairs with OpenAI's **official ChatGPT mobile app** and requires signing in to the same account/workspace. Tong GPT may scan it to launch the official app but cannot use private Remote APIs. Our own Tong GPT companion QR is independent and can be scanned before the website is logged in; it still requires the owner to configure the secure Windows companion.
+
+New **Log in to ChatGPT** menu entry and native voice recognition language choices (Punjabi / Hindi / English Australia / device default). The separate native dictation fallback does not fix proprietary website Voice, which may fail in Android WebView, or override Android mic privacy and scheduling.
+
+**Experimental debug signing:** Android may require uninstall/reinstall between CI APKs. This clears the app's locally stored website cookies and login. Production updates require persistent developer-owned signing keys in secure Actions secrets; do not upload such keys to the public repository.
+
+### Privacy and sources
+- [Google Code Scanner on-device barcode decoding](https://developers.google.com/ml-kit/vision/barcode-scanning/code-scanner)
+- [Official Codex Remote connection instructions](https://learn.chatgpt.com/docs/remote-connections)
