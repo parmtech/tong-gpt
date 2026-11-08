@@ -144,7 +144,8 @@ class PairingQrScannerActivity : Activity() {
 
             override fun possibleResultPoints(resultPoints: MutableList<ResultPoint>?) {}
         })
-        requestCamera()
+        // Try the Google scanner first without requiring camera permission in our app.
+        // Keep ZXing ready as a fully embedded fallback on cancel / unavailable module.
         // Google Code Scanner uses a stronger on-device detector with auto-zoom.
         // When it is unavailable we keep the embedded ZXing scanner as fallback.
         root.post { scanWithGoogle() }
