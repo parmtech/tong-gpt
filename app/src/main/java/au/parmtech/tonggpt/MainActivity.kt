@@ -423,7 +423,7 @@ class MainActivity : Activity() {
         }
 
         section("Explore")
-        action("📷 Scan Windows Codex QR") {
+        action("📷 Windows Codex QR · official pairing requires ChatGPT login") {
             startActivity(Intent(this, WindowsRemoteActivity::class.java)
                 .putExtra("scan_pairing_qr", true))
         }
@@ -433,6 +433,10 @@ class MainActivity : Activity() {
         action("Codex Web") {
             errorOverlay?.visibility = View.GONE
             browser.loadUrl("https://chatgpt.com/codex")
+        }
+        action("Log in to ChatGPT") {
+            errorOverlay?.visibility = View.GONE
+            browser.loadUrl("https://chatgpt.com/auth/login")
         }
         action("Reload ChatGPT") {
             errorOverlay?.visibility = View.GONE
@@ -513,19 +517,44 @@ class MainActivity : Activity() {
 
     /** Uses the installed Android recognizer rather than broken WebView WebRTC. */
     private fun startNativeDictation() {
+        val languages = arrayOf("Punjabi (India)", "Hindi (India)",
+            "English (Australia)", "Use phone language")
+        val codes = arrayOf("pa-IN", "hi-IN", "en-AU", "")
+        val pref = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val last = pref.getInt("native_speech_language", 0).coerceIn(0, 3)
+        AlertDialog.Builder(this)
+            .setTitle("Native voice typing")
+            .setMessage("Choose the language you will speak. This is voice typing, " +
+                "not ChatGPT's live voice call. You can review the message before sending.")
+            .setSingleChoiceItems(languages, last) { dialog, which ->
+                dialog.dismiss()
+                pref.edit().putInt("native_speech_language", which).apply()
+                launchNativeDictation(codes[which])
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun launchNativeDictation(language: String) {
         val voice = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your ChatGPT message")
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 2)
+            if (language.isNotBlank()) {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, language)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, language)
+            }
         }
         try {
+            // Native Google recognition gets microphone control in a foreground activity.
+            // Android still decides priority; apps cannot force-stop other recorders.
             startActivityForResult(voice, REQUEST_SPEECH_INPUT)
         } catch (_: ActivityNotFoundException) {
             AlertDialog.Builder(this)
                 .setTitle("Native voice typing unavailable")
-                .setMessage("Install or enable an Android speech recognition service. " +
-                    "You can still try ChatGPT Voice in Chrome.")
-                .setPositiveButton("Open Chrome") { _, _ -> openExternal(HOME) }
+                .setMessage("Enable your Android speech recognition service. " +
+                    "You can also try ChatGPT Voice in Chrome after signing in.")
+                .setPositiveButton("Open ChatGPT in browser") { _, _ -> openExternal(HOME) }
                 .setNegativeButton("Close", null).show()
         }
     }
@@ -879,10 +908,18 @@ class MainActivity : Activity() {
     @Deprecated("Platform file chooser result handler, intentionally without AndroidX.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_SPEECH_INPUT && resultCode == RESULT_OK) {
-            val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                ?.firstOrNull()?.trim()
-            if (!spoken.isNullOrEmpty()) showSpeechResult(spoken)
+        if (requestCode == REQUEST_SPEECH_INPUT) {
+            if (resultCode == RESULT_OK) {
+                val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                    ?.firstOrNull()?.trim()
+                if (!spoken.isNullOrEmpty()) {
+                    showSpeechResult(spoken)
+                } else {
+                    toast("Nothing recognised. Check speech language and microphone.")
+                }
+            } else {
+                toast("Speech cancelled or not recognised. Try another language or Test microphone.")
+            }
         }
         if (requestCode == PICK_FILE) {
             pendingFiles?.onReceiveValue(
